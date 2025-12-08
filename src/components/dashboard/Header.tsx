@@ -1,0 +1,59 @@
+import { LogOut, User, Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useLoanStore } from '@/store/loanStore';
+
+interface HeaderProps {
+  userEmail?: string;
+}
+
+export function Header({ userEmail }: HeaderProps) {
+  const navigate = useNavigate();
+  const { toggleHistory, isHistoryOpen } = useLoanStore();
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error('Failed to sign out');
+    } else {
+      toast.success('Signed out successfully');
+      navigate('/auth');
+    }
+  };
+
+  return (
+    <header className="h-16 bg-card border-b border-border px-4 lg:px-6 flex items-center justify-between sticky top-0 z-50">
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleHistory}
+          className="lg:hidden"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-lg">TC</span>
+          </div>
+          <div className="hidden sm:block">
+            <h1 className="font-bold text-foreground text-lg">Tata Capital</h1>
+            <p className="text-xs text-muted-foreground">Personal Loan Portal</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-muted rounded-full">
+          <User className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-foreground">{userEmail}</span>
+        </div>
+        <Button variant="ghost" size="icon" onClick={handleLogout}>
+          <LogOut className="h-5 w-5" />
+        </Button>
+      </div>
+    </header>
+  );
+}
