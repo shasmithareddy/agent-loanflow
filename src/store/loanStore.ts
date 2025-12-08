@@ -11,12 +11,87 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
+export type LoanType = 'personal' | 'home' | 'car' | 'education' | 'business';
+
+export interface LoanTypeConfig {
+  id: LoanType;
+  name: string;
+  interestRate: number;
+  minAmount: number;
+  maxAmount: number;
+  maxTenure: number;
+  minIncome: number;
+  maxEmiToIncomeRatio: number;
+  processingFee: number;
+}
+
+export const LOAN_TYPES: LoanTypeConfig[] = [
+  {
+    id: 'personal',
+    name: 'Personal Loan',
+    interestRate: 12,
+    minAmount: 50000,
+    maxAmount: 2500000,
+    maxTenure: 60,
+    minIncome: 25000,
+    maxEmiToIncomeRatio: 50,
+    processingFee: 2,
+  },
+  {
+    id: 'home',
+    name: 'Home Loan',
+    interestRate: 8.5,
+    minAmount: 500000,
+    maxAmount: 50000000,
+    maxTenure: 240,
+    minIncome: 50000,
+    maxEmiToIncomeRatio: 60,
+    processingFee: 0.5,
+  },
+  {
+    id: 'car',
+    name: 'Car Loan',
+    interestRate: 9.5,
+    minAmount: 100000,
+    maxAmount: 5000000,
+    maxTenure: 84,
+    minIncome: 30000,
+    maxEmiToIncomeRatio: 50,
+    processingFee: 1,
+  },
+  {
+    id: 'education',
+    name: 'Education Loan',
+    interestRate: 10,
+    minAmount: 100000,
+    maxAmount: 7500000,
+    maxTenure: 120,
+    minIncome: 20000,
+    maxEmiToIncomeRatio: 55,
+    processingFee: 1,
+  },
+  {
+    id: 'business',
+    name: 'Business Loan',
+    interestRate: 14,
+    minAmount: 100000,
+    maxAmount: 5000000,
+    maxTenure: 60,
+    minIncome: 40000,
+    maxEmiToIncomeRatio: 45,
+    processingFee: 2.5,
+  },
+];
+
 export interface LoanDetails {
+  loanType: LoanType;
   amount: number;
   tenure: number;
   monthlyIncome: number;
   emi: number;
   interestRate: number;
+  processingFee: number;
+  maxEmiToIncomeRatio: number;
 }
 
 export interface VerificationDetails {
@@ -78,11 +153,14 @@ interface LoanState {
 }
 
 const initialLoanDetails: LoanDetails = {
+  loanType: 'personal',
   amount: 500000,
   tenure: 36,
   monthlyIncome: 50000,
   emi: 0,
   interestRate: 12,
+  processingFee: 2,
+  maxEmiToIncomeRatio: 50,
 };
 
 const initialVerificationDetails: VerificationDetails = {
