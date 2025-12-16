@@ -1,66 +1,103 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Phone, ArrowRight, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useLoanStore } from '@/store/loanStore';
 
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otp, setOtp] = useState('');
+  const [isOtpSent, setIsOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
   const navigate = useNavigate();
+  const { updateCustomerProfile } = useLoanStore();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
+  const formatPhoneNumber = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    return digits.slice(0, 10);
+  };
+
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (phoneNumber.length !== 10) {
+      toast.error('Please enter a valid 10-digit mobile number');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+      const fullPhone = `+91${phoneNumber}`;
+      
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: fullPhone,
+      });
 
-        if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast.error('Invalid email or password');
-          } else {
-            toast.error(error.message);
-          }
-        } else {
-          toast.success('Welcome back!');
-          navigate('/');
-        }
+      if (error) {
+        toast.error(error.message);
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
-
-        if (error) {
-          if (error.message.includes('already registered')) {
-            toast.error('This email is already registered. Please login instead.');
-          } else {
-            toast.error(error.message);
-          }
-        } else {
-          toast.success('Account created! You can now login.');
-          setIsLogin(true);
-        }
+        setIsOtpSent(true);
+        setCountdown(30);
+        toast.success('OTP sent to your mobile number');
       }
     } catch (error) {
       toast.error('An unexpected error occurred');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (otp.length !== 6) {
+      toast.error('Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const fullPhone = `+91${phoneNumber}`;
+      
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone: fullPhone,
+        token: otp,
+        type: 'sms',
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else if (data.user) {
+        updateCustomerProfile({ mobileNumber: phoneNumber });
+        toast.success('Login successful!');
+        navigate('/register');
+      }
+    } catch (error) {
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = () => {
+    if (countdown === 0) {
+      handleSendOtp({ preventDefault: () => {} } as React.FormEvent);
     }
   };
 
@@ -143,89 +180,121 @@ export default function AuthPage() {
 
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-foreground">
-              {isLogin ? 'Welcome Back' : 'Create Account'}
+              {isOtpSent ? 'Enter OTP' : 'Login with Mobile'}
             </h2>
             <p className="text-muted-foreground mt-2">
-              {isLogin
-                ? 'Sign in to access your loan dashboard'
-                : 'Start your loan journey today'}
+              {isOtpSent
+                ? `We've sent a 6-digit code to +91 ${phoneNumber}`
+                : 'Enter your mobile number to continue'}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="pl-10"
-                  required
-                />
+          {!isOtpSent ? (
+            <form onSubmit={handleSendOtp} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Mobile Number</Label>
+                <div className="relative flex">
+                  <div className="flex items-center px-3 bg-muted border border-r-0 border-input rounded-l-md text-muted-foreground">
+                    +91
+                  </div>
+                  <div className="relative flex-1">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                      placeholder="9876543210"
+                      className="pl-10 rounded-l-none"
+                      required
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="pl-10 pr-10"
-                  minLength={6}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={isLoading || phoneNumber.length !== 10}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    Send OTP
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-5">
+              <div className="space-y-4">
+                <Label className="text-center block">Enter 6-digit OTP</Label>
+                <div className="flex justify-center">
+                  <InputOTP
+                    maxLength={6}
+                    value={otp}
+                    onChange={setOtp}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={isLoading || otp.length !== 6}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    Verify OTP
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </>
+                )}
+              </Button>
+
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">
+                  Didn't receive OTP?{' '}
+                  {countdown > 0 ? (
+                    <span className="text-primary">Resend in {countdown}s</span>
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      className="text-primary font-medium hover:underline"
+                    >
+                      Resend OTP
+                    </button>
                   )}
-                </button>
+                </p>
               </div>
-            </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              size="lg"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  {isLogin ? 'Sign In' : 'Create Account'}
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </>
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              {isLogin ? "Don't have an account?" : 'Already have an account?'}
               <button
                 type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="ml-1 text-primary font-medium hover:underline"
+                onClick={() => {
+                  setIsOtpSent(false);
+                  setOtp('');
+                }}
+                className="w-full text-sm text-muted-foreground hover:text-foreground"
               >
-                {isLogin ? 'Sign up' : 'Sign in'}
+                ← Change mobile number
               </button>
-            </p>
-          </div>
+            </form>
+          )}
 
           <p className="mt-8 text-center text-xs text-muted-foreground">
             By continuing, you agree to our Terms of Service and Privacy Policy

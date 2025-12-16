@@ -83,6 +83,25 @@ export const LOAN_TYPES: LoanTypeConfig[] = [
   },
 ];
 
+export interface CustomerProfile {
+  mobileNumber: string;
+  pan: string;
+  employmentType: 'salaried' | 'self-employed' | 'business';
+  dob: string;
+  fullName: string;
+  gender: 'male' | 'female' | 'other';
+  maritalStatus: 'single' | 'married' | 'divorced' | 'widowed';
+  residenceAddress: string;
+  residencePincode: string;
+  residenceCity: string;
+  residenceState: string;
+  email: string;
+  aadhaarFile: File | null;
+  aadhaarFileName: string;
+  livePhoto: string | null;
+  isRegistered: boolean;
+}
+
 export interface LoanDetails {
   loanType: LoanType;
   amount: number;
@@ -139,18 +158,42 @@ interface LoanState {
   underwritingDetails: UnderwritingDetails;
   agentHistory: AgentHistoryItem[];
   isHistoryOpen: boolean;
+  customerProfile: CustomerProfile;
+  isHelpOpen: boolean;
 
   setCurrentAgent: (agent: AgentType) => void;
+  switchToAgent: (agent: AgentType) => void;
   addChatMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   updateLoanDetails: (details: Partial<LoanDetails>) => void;
   updateVerificationDetails: (details: Partial<VerificationDetails>) => void;
   updateUnderwritingDetails: (details: Partial<UnderwritingDetails>) => void;
+  updateCustomerProfile: (profile: Partial<CustomerProfile>) => void;
   addAgentHistory: (item: Omit<AgentHistoryItem, 'timestamp'>) => void;
   updateAgentHistory: (agent: AgentType, updates: Partial<AgentHistoryItem>) => void;
   toggleHistory: () => void;
+  toggleHelp: () => void;
   resetLoan: () => void;
   goBackToAgent: (agent: AgentType) => void;
 }
+
+const initialCustomerProfile: CustomerProfile = {
+  mobileNumber: '',
+  pan: '',
+  employmentType: 'salaried',
+  dob: '',
+  fullName: '',
+  gender: 'male',
+  maritalStatus: 'single',
+  residenceAddress: '',
+  residencePincode: '',
+  residenceCity: '',
+  residenceState: '',
+  email: '',
+  aadhaarFile: null,
+  aadhaarFileName: '',
+  livePhoto: null,
+  isRegistered: false,
+};
 
 const initialLoanDetails: LoanDetails = {
   loanType: 'personal',
@@ -196,8 +239,28 @@ export const useLoanStore = create<LoanState>((set, get) => ({
     { agent: 'sanction', status: 'pending', summary: 'Loan Sanction Letter', timestamp: new Date() },
   ],
   isHistoryOpen: true,
+  customerProfile: initialCustomerProfile,
+  isHelpOpen: false,
 
   setCurrentAgent: (agent) => set({ currentAgent: agent }),
+
+  switchToAgent: (agent) => {
+    const state = get();
+    // Add a message indicating agent switch
+    set({
+      currentAgent: agent,
+      chatMessages: [
+        ...state.chatMessages,
+        {
+          id: crypto.randomUUID(),
+          agent: agent,
+          role: 'agent',
+          content: `Switching to ${agent.charAt(0).toUpperCase() + agent.slice(1)} Agent. How can I help you?`,
+          timestamp: new Date(),
+        },
+      ],
+    });
+  },
 
   addChatMessage: (message) => set((state) => ({
     chatMessages: [...state.chatMessages, {
@@ -219,6 +282,10 @@ export const useLoanStore = create<LoanState>((set, get) => ({
     underwritingDetails: { ...state.underwritingDetails, ...details },
   })),
 
+  updateCustomerProfile: (profile) => set((state) => ({
+    customerProfile: { ...state.customerProfile, ...profile },
+  })),
+
   addAgentHistory: (item) => set((state) => ({
     agentHistory: [...state.agentHistory, { ...item, timestamp: new Date() }],
   })),
@@ -230,6 +297,8 @@ export const useLoanStore = create<LoanState>((set, get) => ({
   })),
 
   toggleHistory: () => set((state) => ({ isHistoryOpen: !state.isHistoryOpen })),
+
+  toggleHelp: () => set((state) => ({ isHelpOpen: !state.isHelpOpen })),
 
   resetLoan: () => set({
     currentAgent: 'sales',
