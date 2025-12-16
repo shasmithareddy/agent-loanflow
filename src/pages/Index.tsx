@@ -4,11 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { User } from '@supabase/supabase-js';
 import { Loader2 } from 'lucide-react';
+import { useLoanStore } from '@/store/loanStore';
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { customerProfile } = useLoanStore();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -31,8 +33,10 @@ const Index = () => {
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
+    } else if (!loading && user && !customerProfile.isRegistered) {
+      navigate('/register');
     }
-  }, [loading, user, navigate]);
+  }, [loading, user, navigate, customerProfile.isRegistered]);
 
   if (loading) {
     return (
@@ -45,11 +49,11 @@ const Index = () => {
     );
   }
 
-  if (!user) {
+  if (!user || !customerProfile.isRegistered) {
     return null;
   }
 
-  return <Dashboard userEmail={user.email || 'User'} />;
+  return <Dashboard userPhone={customerProfile.mobileNumber || 'User'} />;
 };
 
 export default Index;
