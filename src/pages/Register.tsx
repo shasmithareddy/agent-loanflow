@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useLoanStore } from '@/store/loanStore';
-import { supabase } from '@/integrations/supabase/client';
+
 
 const INDIAN_STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
@@ -33,18 +33,14 @@ export default function RegisterPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Check auth status
+  // Check if user has mobile number (came from auth)
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate('/auth');
-      } else if (customerProfile.isRegistered) {
-        navigate('/');
-      }
-    };
-    checkAuth();
-  }, [navigate, customerProfile.isRegistered]);
+    if (!customerProfile.mobileNumber) {
+      navigate('/auth');
+    } else if (customerProfile.isRegistered) {
+      navigate('/');
+    }
+  }, [navigate, customerProfile.mobileNumber, customerProfile.isRegistered]);
 
   const validatePAN = (pan: string) => {
     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;

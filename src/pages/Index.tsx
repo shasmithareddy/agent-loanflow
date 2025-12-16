@@ -1,42 +1,28 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { Dashboard } from '@/components/dashboard/Dashboard';
-import { User } from '@supabase/supabase-js';
 import { Loader2 } from 'lucide-react';
 import { useLoanStore } from '@/store/loanStore';
 
 const Index = () => {
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { customerProfile } = useLoanStore();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    // Check if user has completed registration
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    } else if (!loading && user && !customerProfile.isRegistered) {
-      navigate('/register');
+    if (!loading) {
+      if (!customerProfile.mobileNumber) {
+        navigate('/auth');
+      } else if (!customerProfile.isRegistered) {
+        navigate('/register');
+      }
     }
-  }, [loading, user, navigate, customerProfile.isRegistered]);
+  }, [loading, navigate, customerProfile.mobileNumber, customerProfile.isRegistered]);
 
   if (loading) {
     return (
@@ -49,11 +35,11 @@ const Index = () => {
     );
   }
 
-  if (!user || !customerProfile.isRegistered) {
+  if (!customerProfile.mobileNumber || !customerProfile.isRegistered) {
     return null;
   }
 
-  return <Dashboard userPhone={customerProfile.mobileNumber || 'User'} />;
+  return <Dashboard userPhone={customerProfile.mobileNumber} />;
 };
 
 export default Index;
