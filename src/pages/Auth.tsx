@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, ArrowRight, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +8,9 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { useLoanStore } from '@/store/loanStore';
+
+// Mock mode - set to true for testing without real OTP
+const MOCK_MODE = true;
 
 export default function AuthPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -41,25 +43,19 @@ export default function AuthPage() {
 
     setIsLoading(true);
 
-    try {
-      const fullPhone = `+91${phoneNumber}`;
-      
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: fullPhone,
-      });
-
-      if (error) {
-        toast.error(error.message);
-      } else {
+    // Mock mode - skip actual OTP send
+    if (MOCK_MODE) {
+      setTimeout(() => {
         setIsOtpSent(true);
         setCountdown(30);
-        toast.success('OTP sent to your mobile number');
-      }
-    } catch (error) {
-      toast.error('An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
+        toast.success('Demo mode: Enter any 6-digit OTP');
+        setIsLoading(false);
+      }, 500);
+      return;
     }
+
+    // Real OTP logic would go here
+    setIsLoading(false);
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -72,27 +68,19 @@ export default function AuthPage() {
 
     setIsLoading(true);
 
-    try {
-      const fullPhone = `+91${phoneNumber}`;
-      
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: fullPhone,
-        token: otp,
-        type: 'sms',
-      });
-
-      if (error) {
-        toast.error(error.message);
-      } else if (data.user) {
+    // Mock mode - accept any 6-digit OTP
+    if (MOCK_MODE) {
+      setTimeout(() => {
         updateCustomerProfile({ mobileNumber: phoneNumber });
         toast.success('Login successful!');
         navigate('/register');
-      }
-    } catch (error) {
-      toast.error('An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
+        setIsLoading(false);
+      }, 500);
+      return;
     }
+
+    // Real verification logic would go here
+    setIsLoading(false);
   };
 
   const handleResendOtp = () => {
