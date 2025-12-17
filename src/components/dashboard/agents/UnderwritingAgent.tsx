@@ -18,6 +18,7 @@ export function UnderwritingAgent() {
     updateAgentHistory,
     chatMessages,
     goBackToAgent,
+    advanceProcess,
   } = useLoanStore();
 
   const [hasGreeted, setHasGreeted] = useState(false);
@@ -188,9 +189,13 @@ Your loan is now approved and ready for sanction. Our Sanction Agent will genera
       });
 
       updateAgentHistory('sanction', { status: 'current' });
+      
+      // Advance process
+      advanceProcess('document_upload');
 
       setTimeout(() => {
         setCurrentAgent('sanction');
+        advanceProcess('loan_approval');
       }, 2000);
     }, 1000);
   };
