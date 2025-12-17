@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Bot, MessageCircle, Calculator, Loader2 } from 'lucide-react';
+import { X, Send, Bot, MessageCircle, Loader2 } from 'lucide-react';
 import { useLoanStore, LOAN_TYPES } from '@/store/loanStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { calculateEMI } from '@/lib/emiCalculator';
 
 interface HelpMessage {
@@ -320,7 +319,11 @@ export function HelpPopup() {
             </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+            <div 
+              ref={scrollRef}
+              className="flex-1 overflow-y-auto p-4"
+              style={{ maxHeight: '320px' }}
+            >
               <div className="space-y-4">
                 {messages.map((message) => (
                   <motion.div
@@ -367,7 +370,7 @@ export function HelpPopup() {
                   </motion.div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Input */}
             <div className="p-4 border-t border-border bg-card flex-shrink-0">

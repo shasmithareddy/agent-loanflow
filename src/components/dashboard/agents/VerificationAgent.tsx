@@ -19,6 +19,7 @@ export function VerificationAgent() {
     updateAgentHistory,
     chatMessages,
     goBackToAgent,
+    advanceProcess,
   } = useLoanStore();
 
   const [hasGreeted, setHasGreeted] = useState(false);
@@ -142,6 +143,9 @@ Your application will now be reviewed by our Underwriting team for credit assess
       });
 
       updateAgentHistory('underwriting', { status: 'current' });
+      
+      // Advance process
+      advanceProcess('underwriting');
 
       setTimeout(() => {
         setCurrentAgent('underwriting');

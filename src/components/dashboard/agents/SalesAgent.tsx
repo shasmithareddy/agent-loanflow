@@ -25,6 +25,7 @@ export function SalesAgent() {
     setCurrentAgent,
     updateAgentHistory,
     chatMessages,
+    advanceProcess,
   } = useLoanStore();
 
   const [hasGreeted, setHasGreeted] = useState(false);
@@ -139,9 +140,13 @@ Now, let's proceed to verify your identity and documents. Our Verification Agent
       });
 
       updateAgentHistory('verification', { status: 'current' });
+      
+      // Advance process steps
+      advanceProcess('loan_details');
 
       setTimeout(() => {
         setCurrentAgent('verification');
+        advanceProcess('kyc_verification');
       }, 2000);
     }, 1000);
   };
