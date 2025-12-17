@@ -122,8 +122,9 @@ export default {
         "bounce-in": "bounce-in 0.5s ease-out",
       },
       boxShadow: {
-        glow: "0 0 20px hsl(67 75% 50% / 0.4)",
-        primary: "0 4px 14px 0 hsl(203 100% 30% / 0.25)",
+        glow: "0 0 20px hsl(208 100% 49% / 0.3)",
+        primary: "0 4px 14px 0 hsl(208 100% 49% / 0.25)",
+        elegant: "0 10px 40px -10px hsl(208 100% 49% / 0.3)",
       },
     },
   },
